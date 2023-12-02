@@ -1,16 +1,11 @@
 import sys
 import typing as T
+from functools import reduce
 
 with open(sys.argv[1]) as f:
     lines = f.readlines()
 
-constraint = {
-    "red": 12,
-    "green": 13,
-    "blue": 14,
-}
-
-id_sum = 0
+power_sum = 0
 
 for game in lines:
     game = game.strip()
@@ -30,13 +25,8 @@ for game in lines:
             if number > color_max.get(color, 0):
                 color_max[color] = number
 
-    ok = True
-    for key, value in constraint.items():
-        if color_max[key] > value:
-            print(f"Game {id} fails constraint because {key} {color_max[key]} > {value}")
-            ok = False
-
-    if ok:
-        id_sum += int(id)
-
-print(id_sum)
+    power = reduce(lambda a,b: a*b, color_max.values())
+    print(f"Game {id} power: {power}")
+    power_sum += power
+    
+print(power_sum)
