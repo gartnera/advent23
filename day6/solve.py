@@ -5,9 +5,11 @@ import multiprocessing as mp
 from print_color import print
 import re
 
+collapse_val = ''
+
 def str_numbers_to_int(s: str) -> T.List[int]:
     s = s.strip()
-    s = re.sub(' +', ' ', s)
+    s = re.sub(' +', collapse_val, s)
     return [int(x) for x in s.split(" ") if x]
 
 with open(sys.argv[1]) as f:
@@ -21,10 +23,10 @@ for i, [total_time, distance_record] in enumerate(zip(times,distances)):
     for trial_time in range(1, total_time):
         distance = (total_time - trial_time) * trial_time
         if distance > distance_record:
-            print(f"got record for {i}: {distance} > {distance_record} with {trial_time}")
+            #print(f"got record for {i}: {distance} > {distance_record} with {trial_time}")
             ways_to_win += 1
 
-    print(f"ways to win for {i}: {ways_to_win}", color="green")
+    # print(f"ways to win for {i}: {ways_to_win}", color="green")
     total_ways_to_win *= ways_to_win
 
 print(f"total ways to win: {total_ways_to_win}")
