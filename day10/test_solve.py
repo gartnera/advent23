@@ -34,7 +34,7 @@ def test_point_in_set():
         ["example5.txt", 70, 8, Point(5, 12)],
         ["example6.txt", 80, 10, Point(1, 4)],
         # can't get correct answer for part 2 :( for the real input
-        # 274 is not correct :(
+        # 274 is not correct :( 281 is the correct answer
         ["input.txt", 7107, 274, None],
     ],
 )
