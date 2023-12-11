@@ -4,6 +4,8 @@ import pytest
 @pytest.mark.parametrize("path, expected_start_pos", [
     ["example1.txt", Point(1,1)],
     ["example2.txt", Point(2,0)],
+    ["example3.txt", Point(1,1)],
+    ["example4.txt", Point(1,1)],
     ["input.txt", Point(92,43)],
 ])
 def test_load(path, expected_start_pos):
@@ -14,6 +16,8 @@ def test_load(path, expected_start_pos):
 @pytest.mark.parametrize("path, expected_midpoint_distance,alt_start_point", [
     ["example1.txt", 4, Point(1,2)],
     ["example2.txt", 8, Point(3,0)],
+    ["example3.txt", 23, Point(1,2)],
+    ["example4.txt", 22, Point(1,2)],
     ["input.txt", 7107, Point(92,42)],
 ])
 def test_cycle_midpoint_distance(path, expected_midpoint_distance, alt_start_point):
