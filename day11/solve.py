@@ -1,8 +1,7 @@
-import networkx
 import typing as T
 from methodtools import lru_cache
 import sys
-import networkx as nx
+import rustworkx as rx
 import matplotlib.pyplot as plt
 from print_color import print
 from copy import copy
@@ -28,6 +27,7 @@ class Point(T.NamedTuple):
 
 
 IdPointMapT = T.Dict[int, Point]
+NodeNameToNodeIdT = T.Dict[int, int]
 
 
 class Lines(list):
@@ -55,16 +55,18 @@ class Lines(list):
 
 class Universe(T.NamedTuple):
     galaxy_id_to_point: IdPointMapT
-    graph: nx.Graph
+    node_name_to_node_id: NodeNameToNodeIdT
+    graph: rx.PyDiGraph
     lines: Lines
     max_galaxy_id: int
 
     def distance_between_points(self, a: Point, b: Point) -> int:
-        path = nx.shortest_path(self.graph, a.name(), b.name(), weight="weight")
-        # print(path)
-        weight = nx.path_weight(self.graph, path, "weight")
-        # print(weight)
-        return weight
+        a_node = self.node_name_to_node_id[a.name()]
+        b_node = self.node_name_to_node_id[b.name()]
+        pathmap = rx.dijkstra_shortest_paths(self.graph, a_node, b_node, weight_fn=float)
+        nodes = pathmap[b_node]
+        weights = [self.graph.get_edge_data(nodes[i], nodes[i + 1]) for i in range(len(nodes) - 1)]
+        return sum(weights)
 
     def distance_between_all_points(self) -> int:
         res = 0
@@ -73,29 +75,6 @@ class Universe(T.NamedTuple):
             rhand_pt = self.galaxy_id_to_point[rhand]
             res += self.distance_between_points(lhand_pt, rhand_pt)
         return res
-
-
-def show_graph(graph: nx.Graph):
-    elarge = [(u, v) for (u, v, d) in graph.edges(data=True)]
-
-    esmall = [(u, v) for (u, v, d) in graph.edges(data=True)]
-
-    pos = nx.spectral_layout(graph)  # positions for all nodes
-
-    # nodes
-    nx.draw_networkx_nodes(graph, pos, node_size=700)
-
-    # edges
-    nx.draw_networkx_edges(graph, pos, edgelist=elarge, width=2)
-    nx.draw_networkx_edges(
-        graph, pos, edgelist=esmall, width=2, alpha=0.5, edge_color="b", style="dashed"
-    )
-    nx.draw_networkx_edge_labels(graph, pos, edge_labels=nx.get_edge_attributes(graph, "weight"))
-    nx.draw_networkx_labels(graph, pos, font_size=20, font_family="sans-serif")
-
-    plt.axis("off")
-    plt.tight_layout(pad=0, h_pad=0, w_pad=0)
-    plt.show()
 
 
 HVNeighborsOffsets = [
@@ -143,14 +122,19 @@ def load(path: str) -> Universe:
 
     # lines = expand_lines(lines)
 
+    g = rx.PyDiGraph()
+
+    node_name_to_node_id: NodeNameToNodeIdT = {}
+
     galaxy_id_to_point: IdPointMapT = {}
     for x, line in enumerate(lines):
         for y, sym in enumerate(line):
+            p = Point(x, y)
+            p_name = p.name()
+            node_name_to_node_id[p_name] = g.add_node(p_name)
             if sym == 0:
                 continue
             galaxy_id_to_point[sym] = Point(x, y)
-
-    g = nx.Graph()
 
     for i, line in enumerate(lines):
         for j, sym in enumerate(line):
@@ -166,9 +150,11 @@ def load(path: str) -> Universe:
                 weight = 1
                 if not lines.row_has_galaxy(target.x) or not lines.col_has_galaxy(target.y):
                     weight = 2
-                g.add_edge(current.name(), target.name(), weight=weight)
+                current_node = node_name_to_node_id[current.name()]
+                target_node = node_name_to_node_id[target.name()]
+                g.add_edge(current_node, target_node, weight)
 
-    return Universe(galaxy_id_to_point, g, lines, max_galaxy_id)
+    return Universe(galaxy_id_to_point, node_name_to_node_id, g, lines, max_galaxy_id)
 
 
 if __name__ == "__main__":
