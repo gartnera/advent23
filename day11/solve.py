@@ -103,7 +103,7 @@ def expand_lines(lines: Lines) -> Lines:
     return expanded_lines
 
 
-def load(path: str) -> Universe:
+def load(path: str, expansion_weight=2) -> Universe:
     with open(path) as f:
         raw_lines = f.readlines()
 
@@ -149,7 +149,7 @@ def load(path: str) -> Universe:
                     continue
                 weight = 1
                 if not lines.row_has_galaxy(target.x) or not lines.col_has_galaxy(target.y):
-                    weight = 2
+                    weight = expansion_weight
                 current_node = node_name_to_node_id[current.name()]
                 target_node = node_name_to_node_id[target.name()]
                 g.add_edge(current_node, target_node, weight)
@@ -158,7 +158,6 @@ def load(path: str) -> Universe:
 
 
 if __name__ == "__main__":
-    universe = load(sys.argv[1])
-    # show_graph(universe.graph)
+    universe = load(sys.argv[1], expansion_weight=1000000)
     res = universe.distance_between_all_points()
     print(res)
