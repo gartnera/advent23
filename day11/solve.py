@@ -103,6 +103,24 @@ HVNeighborsOffsets = [
 ]
 
 
+def expand_lines(lines: Lines) -> Lines:
+    expanded_lines = Lines(*copy(lines))
+    # reverse iteration to perserve insert indexing
+    for i, row in reversed(tuple(enumerate(lines))):
+        if lines.row_has_galaxy(i):
+            continue
+        new_row = [0 for _ in range(len(row))]
+        expanded_lines.insert(i, new_row)
+
+    for j in range(len(lines[0]) - 1, -1, -1):
+        if lines.col_has_galaxy(j):
+            continue
+
+        for line in expanded_lines:
+            line.insert(j, 0)
+    return expanded_lines
+
+
 def load(path: str) -> Universe:
     with open(path) as f:
         raw_lines = f.readlines()
@@ -120,23 +138,10 @@ def load(path: str) -> Universe:
                 line.append(0)
         lines.append(line)
 
-    expanded_lines = Lines(*copy(lines))
-    # reverse iteration to perserve insert indexing
-    for i, row in reversed(tuple(enumerate(lines))):
-        if lines.row_has_galaxy(i):
-            continue
-        new_row = [0 for _ in range(len(row))]
-        expanded_lines.insert(i, new_row)
-
-    for j in range(len(lines[0]) - 1, -1, -1):
-        if lines.col_has_galaxy(j):
-            continue
-
-        for line in expanded_lines:
-            line.insert(j, 0)
+    lines = expand_lines(lines)
 
     galaxy_id_to_point: IdPointMapT = {}
-    for x, line in enumerate(expanded_lines):
+    for x, line in enumerate(lines):
         for y, sym in enumerate(line):
             if sym == 0:
                 continue
@@ -144,20 +149,20 @@ def load(path: str) -> Universe:
 
     g = nx.Graph()
 
-    for i, line in enumerate(expanded_lines):
+    for i, line in enumerate(lines):
         for j, sym in enumerate(line):
             current = Point(i, j)
             for ii, jj in HVNeighborsOffsets:
                 x = i + ii
                 y = j + jj
                 target = Point(x, y)
-                if x < 0 or x > len(expanded_lines) - 1 or y < 0 or y > len(line) - 1:
+                if x < 0 or x > len(lines) - 1 or y < 0 or y > len(line) - 1:
                     continue
                 if current == target:
                     continue
                 g.add_edge(current.name(), target.name())
 
-    return Universe(galaxy_id_to_point, g, expanded_lines, max_galaxy_id)
+    return Universe(galaxy_id_to_point, g, lines, max_galaxy_id)
 
 
 if __name__ == "__main__":
