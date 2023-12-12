@@ -60,8 +60,11 @@ class Universe(T.NamedTuple):
     max_galaxy_id: int
 
     def distance_between_points(self, a: Point, b: Point) -> int:
-        path = nx.shortest_path(self.graph, a.name(), b.name())
-        return len(path) - 1
+        path = nx.shortest_path(self.graph, a.name(), b.name(), weight="weight")
+        # print(path)
+        weight = nx.path_weight(self.graph, path, "weight")
+        # print(weight)
+        return weight
 
     def distance_between_all_points(self) -> int:
         res = 0
@@ -87,7 +90,7 @@ def show_graph(graph: nx.Graph):
     nx.draw_networkx_edges(
         graph, pos, edgelist=esmall, width=2, alpha=0.5, edge_color="b", style="dashed"
     )
-    # nx.draw_networkx_edge_labels(graph, pos, edge_labels=nx.get_edge_attributes(graph, "weight"))
+    nx.draw_networkx_edge_labels(graph, pos, edge_labels=nx.get_edge_attributes(graph, "weight"))
     nx.draw_networkx_labels(graph, pos, font_size=20, font_family="sans-serif")
 
     plt.axis("off")
@@ -138,7 +141,7 @@ def load(path: str) -> Universe:
                 line.append(0)
         lines.append(line)
 
-    lines = expand_lines(lines)
+    # lines = expand_lines(lines)
 
     galaxy_id_to_point: IdPointMapT = {}
     for x, line in enumerate(lines):
@@ -160,12 +163,16 @@ def load(path: str) -> Universe:
                     continue
                 if current == target:
                     continue
-                g.add_edge(current.name(), target.name())
+                weight = 1
+                if not lines.row_has_galaxy(target.x) or not lines.col_has_galaxy(target.y):
+                    weight = 2
+                g.add_edge(current.name(), target.name(), weight=weight)
 
     return Universe(galaxy_id_to_point, g, lines, max_galaxy_id)
 
 
 if __name__ == "__main__":
     universe = load(sys.argv[1])
+    # show_graph(universe.graph)
     res = universe.distance_between_all_points()
     print(res)
